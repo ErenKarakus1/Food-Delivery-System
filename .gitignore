@@ -1,0 +1,42 @@
+gitignore
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Go build output
+bin/
+dist/
+
+# Coverage
+*.out
+coverage.out
+
+# Environment files
+.env
+.env.local
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Go workspace
+go.work
+go.work.sum
+
+#Local tests
+api_test.go
