@@ -45,6 +45,23 @@ const deleteMenuItemQuery = `
 	WHERE id=$1
 `
 
+const updateMenuItemQuery = `
+	UPDATE menu_items
+	SET
+		name=$1,
+		description=$2,
+		price_cents=$3
+	WHERE
+		id=$4
+	RETURNING
+		id,
+		restaurant_id,
+		name,
+		description,
+		price_cents,
+		created_at
+`
+
 var ErrMenuItemNotFound = errors.New("menu item not found")
 
 func CreateMenuItem(ctx context.Context, pool *pgxpool.Pool, req model.MenuItem) (model.MenuItem, error) {
@@ -107,4 +124,30 @@ func DeleteMenuItem(ctx context.Context, pool *pgxpool.Pool, menuItemID uuid.UUI
 		return ErrMenuItemNotFound
 	}
 	return nil
+}
+
+func UpdateMenuItem(ctx context.Context, pool *pgxpool.Pool, menuItemID uuid.UUID, newMenuItem model.CreateMenuItemRequest) (model.MenuItem, error) {
+	var updatedMenuItem model.MenuItem
+	err := pool.QueryRow(
+		ctx,
+		updateMenuItemQuery,
+		newMenuItem.Name,
+		newMenuItem.Description,
+		newMenuItem.PriceCents,
+		menuItemID,
+	).Scan(
+		&updatedMenuItem.ID,
+		&updatedMenuItem.RestaurantID,
+		&updatedMenuItem.Name,
+		&updatedMenuItem.Description,
+		&updatedMenuItem.PriceCents,
+		&updatedMenuItem.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.MenuItem{}, ErrMenuItemNotFound
+		}
+		return model.MenuItem{}, errors.New("internal server error")
+	}
+	return updatedMenuItem, nil
 }
