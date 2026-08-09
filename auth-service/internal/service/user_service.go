@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/model"
-	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/password"
+	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/password"
 	"github.com/google/uuid"
 )
 

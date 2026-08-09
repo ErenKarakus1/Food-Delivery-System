@@ -7,7 +7,7 @@ import (
 	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/model"
 	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/repository"
 	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/service"
-	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/validation"
+	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/validation"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"

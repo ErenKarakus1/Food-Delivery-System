@@ -6,10 +6,10 @@ import (
 
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/jwt"
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/model"
+	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/password"
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/repository"
+	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/service"
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/validation"
-	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/password"
-	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/service"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
