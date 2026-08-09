@@ -22,7 +22,11 @@ func main() {
 	router := gin.Default()
 
 	router.POST("/menu-items", handler.CreateMenuItemHandler(pool))
+	router.DELETE("/menu-items/:id", handler.DeleteMenuItemHandler(pool))
 	router.POST("/restaurants", handler.CreateRestaurantHandler(pool))
+	router.GET("/restaurants", handler.GetAllRestaurants(pool))
+	router.GET("/restaurants/:id/menu", handler.GetMenu(pool))
+	router.GET("/restaurants/:id", handler.GetRestauranByIDHandler(pool))
 
 	router.Run(":8081")
 }

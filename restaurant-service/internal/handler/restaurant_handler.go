@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/model"
@@ -50,5 +51,66 @@ func CreateRestaurantHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		ctx.JSON(http.StatusCreated, createRestaurantResponse)
+	}
+}
+
+func GetRestauranByIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		restaurantID := ctx.Param("id")
+		if restaurantID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "restaurant id required"})
+			return
+		}
+		parsedRestaurantID, err := uuid.Parse(restaurantID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid restaurant id"})
+			return
+		}
+		restaurant, err := repository.GetRestaurantByID(ctx.Request.Context(), pool, parsedRestaurantID)
+		if err != nil {
+			if errors.Is(err, repository.ErrRestaurantNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrRestaurantNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, restaurant)
+	}
+}
+
+func GetAllRestaurants(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		restaurants, err := repository.GetAllRestaurants(ctx.Request.Context(), pool)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, restaurants)
+	}
+}
+
+func GetMenu(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		restaurantID := ctx.Param("id")
+		if restaurantID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "restaurant id required"})
+			return
+		}
+		parsedRestaurantID, err := uuid.Parse(restaurantID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid restaurant id"})
+			return
+		}
+		menu, err := repository.GetMenu(ctx.Request.Context(), pool, parsedRestaurantID)
+		if err != nil {
+			if errors.Is(err, repository.ErrRestaurantNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrRestaurantNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, menu)
 	}
 }

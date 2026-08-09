@@ -44,7 +44,7 @@ func CreateMenuItemHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user id"})
 			return
 		}
-		if _, err := repository.FindRestaurant(ctx.Request.Context(), pool, req.RestaurantID, parsedUserID); err != nil {
+		if _, err := repository.RestaurantExistsAndOwned(ctx.Request.Context(), pool, req.RestaurantID, parsedUserID); err != nil {
 			if errors.Is(err, repository.ErrRestaurantNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrRestaurantNotFound.Error()})
 				return
@@ -59,5 +59,71 @@ func CreateMenuItemHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		ctx.JSON(http.StatusCreated, menuItemResponse)
+	}
+}
+
+func DeleteMenuItemHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		role := ctx.GetHeader("X-User-Role")
+		if role == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "role required"})
+			return
+		}
+		if role != "restaurant" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		userID := ctx.GetHeader("X-User-ID")
+		if userID == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user id required"})
+			return
+		}
+		parsedUserID, err := uuid.Parse(userID)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user id"})
+			return
+		}
+		itemID := ctx.Param("id")
+		if itemID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "menu item id required"})
+			return
+		}
+		parsedItemID, err := uuid.Parse(itemID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid menu item id"})
+			return
+		}
+		menuItem, err := repository.GetMenuItemByID(ctx.Request.Context(), pool, parsedItemID)
+		if err != nil {
+			if errors.Is(err, repository.ErrMenuItemNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrMenuItemNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		restaurant, err := repository.GetRestaurantByID(ctx.Request.Context(), pool, menuItem.RestaurantID)
+		if err != nil {
+			if errors.Is(err, repository.ErrRestaurantNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrRestaurantNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		if parsedUserID != restaurant.OwnerID {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		err = repository.DeleteMenuItem(ctx.Request.Context(), pool, parsedItemID)
+		if err != nil {
+			if errors.Is(err, repository.ErrMenuItemNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrMenuItemNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.Status(http.StatusNoContent)
 	}
 }
