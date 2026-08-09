@@ -45,3 +45,7 @@ type RegisterResponse struct {
 	Role      string    `json:"role"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type LoginResponse struct {
+	Token string `json:"token"`
+}
