@@ -1,0 +1,63 @@
+package handler
+
+import (
+	"errors"
+	"net/http"
+
+	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/model"
+	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/repository"
+	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/service"
+	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/validation"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func CreateMenuItemHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var req model.CreateMenuItemRequest
+		if err := ctx.ShouldBindJSON(&req); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+			return
+		}
+		role := ctx.GetHeader("X-User-Role")
+		if role == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "role required"})
+			return
+		}
+		if role != "restaurant" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		req.Normalize()
+		if err := validation.ValidateCreateMenuItemRequest(req); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		userID := ctx.GetHeader("X-User-ID")
+		if userID == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user id required"})
+			return
+		}
+		parsedUserID, err := uuid.Parse(userID)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user id"})
+			return
+		}
+		if _, err := repository.FindRestaurant(ctx.Request.Context(), pool, req.RestaurantID, parsedUserID); err != nil {
+			if errors.Is(err, repository.ErrRestaurantNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrRestaurantNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		createdMenuItem := service.CreateMenuItemFromRequest(req)
+		menuItemResponse, err := repository.CreateMenuItem(ctx.Request.Context(), pool, createdMenuItem)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusCreated, menuItemResponse)
+	}
+}
