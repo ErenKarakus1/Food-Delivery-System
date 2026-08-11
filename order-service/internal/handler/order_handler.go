@@ -287,6 +287,9 @@ func GetRestaurantOrdersHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 				myOrders = append(myOrders, order)
 			}
 		}
+		if myOrders == nil {
+			myOrders = []model.Order{}
+		}
 		ctx.JSON(http.StatusOK, myOrders)
 	}
 }
@@ -499,5 +502,39 @@ func UpdateCourierOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		ctx.JSON(http.StatusOK, updatedOrder)
+	}
+}
+
+func GetCourierOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		role := ctx.GetHeader("X-User-Role")
+		if role == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "role required"})
+			return
+		}
+		if role != "courier" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		orderID := ctx.Param("id")
+		if orderID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "order id required"})
+			return
+		}
+		parsedOrderID, err := uuid.Parse(orderID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid order id"})
+			return
+		}
+		order, err := repository.GetOrderByID(ctx.Request.Context(), pool, parsedOrderID)
+		if err != nil {
+			if errors.Is(err, repository.ErrOrderNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, order)
 	}
 }
