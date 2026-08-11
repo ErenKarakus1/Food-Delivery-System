@@ -535,6 +535,10 @@ func GetCourierOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			return
 		}
+		if !validation.ValidateCourierStatusRequest(order.Status) {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
 		ctx.JSON(http.StatusOK, order)
 	}
 }
