@@ -125,6 +125,19 @@ const updateOrderStatusByOrderIDQuery = `
 		updated_at
 `
 
+const getOrdersReadyForPickupQuery = `
+	SELECT
+		id,
+		customer_id,
+		restaurant_id,
+		total_cents,
+		status,
+		created_at,
+		updated_at
+	FROM orders
+	WHERE status='ready_for_pickup'
+`
+
 func GetOrderItemsByOrderID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.UUID) ([]model.OrderItem, error) {
 	var order_items []model.OrderItem
 	rows, err := pool.Query(
@@ -391,4 +404,39 @@ func UpdateOrderStatusByOrderID(ctx context.Context, pool *pgxpool.Pool, newStat
 		return model.Order{}, errors.New("internal server error")
 	}
 	return updatedOrder, nil
+}
+
+func GetOrdersReadyForPickup(ctx context.Context, pool *pgxpool.Pool) ([]model.Order, error) {
+	var orders []model.Order
+	rows, err := pool.Query(
+		ctx,
+		getOrdersReadyForPickupQuery,
+	)
+	if err != nil {
+		return []model.Order{}, errors.New("internal server error")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var order model.Order
+		err := rows.Scan(
+			&order.ID,
+			&order.CustomerID,
+			&order.RestaurantID,
+			&order.TotalCents,
+			&order.Status,
+			&order.CreatedAt,
+			&order.UpdatedAt,
+		)
+		if err != nil {
+			return []model.Order{}, errors.New("internal server error")
+		}
+		orders = append(orders, order)
+	}
+	if err := rows.Err(); err != nil {
+		return []model.Order{}, errors.New("internal server error")
+	}
+	if orders == nil {
+		orders = []model.Order{}
+	}
+	return orders, nil
 }
