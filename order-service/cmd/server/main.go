@@ -27,5 +27,6 @@ func main() {
 	router.GET("/orders/restaurant/:id", handler.GetRestaurantOrderByOrderIDHandler(pool))
 	router.PATCH("/orders/restaurant/:id", handler.ChangeRestaurantOrderStatusHandler(pool))
 	router.GET("/orders/courier/ready-for-pickup", handler.GetOrdersReadyForPickupHandler(pool))
+	router.PATCH("/orders/courier/:id", handler.UpdateCourierOrderStatusHandler(pool))
 	router.Run(":8082")
 }

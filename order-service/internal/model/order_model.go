@@ -59,3 +59,11 @@ type UpdateOrderStatusRequest struct {
 func (r *UpdateOrderStatusRequest) Normalize() {
 	r.Status = strings.ToLower(strings.TrimSpace(r.Status))
 }
+
+type CourierUpdateOrderStatusRequest struct {
+	Status string `json:"status"`
+}
+
+func (r *CourierUpdateOrderStatusRequest) Normalize() {
+	r.Status = strings.ToLower(strings.TrimSpace(r.Status))
+}

@@ -318,7 +318,7 @@ func GetCustomerOrderByID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.
 	return order, order_items, nil
 }
 
-func GetRestaurantOrderByID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.UUID) (model.Order, error) {
+func GetOrderByID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.UUID) (model.Order, error) {
 	var order model.Order
 	err := pool.QueryRow(
 		ctx,

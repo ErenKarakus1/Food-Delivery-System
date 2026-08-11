@@ -322,7 +322,7 @@ func GetRestaurantOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid order id"})
 			return
 		}
-		order, err := repository.GetRestaurantOrderByID(ctx.Request.Context(), pool, parsedOrderID)
+		order, err := repository.GetOrderByID(ctx.Request.Context(), pool, parsedOrderID)
 		if err != nil {
 			if errors.Is(err, repository.ErrOrderNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
@@ -351,13 +351,13 @@ func GetRestaurantOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 
 func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var updateRole model.UpdateOrderStatusRequest
-		if err := ctx.ShouldBindJSON(&updateRole); err != nil {
+		var updateStatus model.UpdateOrderStatusRequest
+		if err := ctx.ShouldBindJSON(&updateStatus); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 			return
 		}
-		updateRole.Normalize()
-		if !validation.ValidateStatusRequest(updateRole.Status) {
+		updateStatus.Normalize()
+		if !validation.ValidateStatusRequest(updateStatus.Status) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
 			return
 		}
@@ -390,7 +390,7 @@ func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid order id"})
 			return
 		}
-		order, err := repository.GetRestaurantOrderByID(ctx.Request.Context(), pool, parsedOrderID)
+		order, err := repository.GetOrderByID(ctx.Request.Context(), pool, parsedOrderID)
 		if err != nil {
 			if errors.Is(err, repository.ErrOrderNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
@@ -408,11 +408,11 @@ func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			return
 		}
-		if !validation.ValidateStatusTransition(order.Status, updateRole.Status) {
+		if !validation.ValidateStatusTransition(order.Status, updateStatus.Status) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid status transition"})
 			return
 		}
-		updatedOrder, err := repository.UpdateOrderStatusByOrderID(ctx.Request.Context(), pool, updateRole.Status, parsedOrderID)
+		updatedOrder, err := repository.UpdateOrderStatusByOrderID(ctx.Request.Context(), pool, updateStatus.Status, parsedOrderID)
 		if err != nil {
 			if errors.Is(err, repository.ErrOrderNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
@@ -442,5 +442,62 @@ func GetOrdersReadyForPickupHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		ctx.JSON(http.StatusOK, orders)
+	}
+}
+
+func UpdateCourierOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var updateStatus model.CourierUpdateOrderStatusRequest
+		if err := ctx.ShouldBindJSON(&updateStatus); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+			return
+		}
+		updateStatus.Normalize()
+		if !validation.ValidateCourierStatusRequest(updateStatus.Status) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
+			return
+		}
+		role := ctx.GetHeader("X-User-Role")
+		if role == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "role required"})
+			return
+		}
+		if role != "courier" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		orderID := ctx.Param("id")
+		if orderID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "order id required"})
+			return
+		}
+		parsedOrderID, err := uuid.Parse(orderID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid order id"})
+			return
+		}
+		order, err := repository.GetOrderByID(ctx.Request.Context(), pool, parsedOrderID)
+		if err != nil {
+			if errors.Is(err, repository.ErrOrderNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		if !validation.ValidateCourierStatusTransition(order.Status, updateStatus.Status) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid status transition"})
+			return
+		}
+		updatedOrder, err := repository.UpdateOrderStatusByOrderID(ctx.Request.Context(), pool, updateStatus.Status, parsedOrderID)
+		if err != nil {
+			if errors.Is(err, repository.ErrOrderNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, updatedOrder)
 	}
 }
