@@ -10,6 +10,7 @@ import (
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/model"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/repository"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/service"
+	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/validation"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -321,7 +322,7 @@ func GetRestaurantOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid order id"})
 			return
 		}
-		order, orderItems, err := repository.GetRestaurantOrderByID(ctx.Request.Context(), pool, parsedOrderID)
+		order, err := repository.GetRestaurantOrderByID(ctx.Request.Context(), pool, parsedOrderID)
 		if err != nil {
 			if errors.Is(err, repository.ErrOrderNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
@@ -339,6 +340,87 @@ func GetRestaurantOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			return
 		}
+		orderItems, err := repository.GetOrderItemsByOrderID(ctx.Request.Context(), pool, order.ID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
 		ctx.JSON(http.StatusOK, gin.H{"order": order, "order_items": orderItems})
+	}
+}
+
+func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var updateRole model.UpdateOrderStatusRequest
+		if err := ctx.ShouldBindJSON(&updateRole); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+			return
+		}
+		updateRole.Normalize()
+		if !validation.ValidateStatusRequest(updateRole.Status) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
+			return
+		}
+		userID := ctx.GetHeader("X-User-ID")
+		if userID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "user id required"})
+			return
+		}
+		parsedUserID, err := uuid.Parse(userID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+			return
+		}
+		role := ctx.GetHeader("X-User-Role")
+		if role == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "role required"})
+			return
+		}
+		if role != "restaurant" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		orderID := ctx.Param("id")
+		if orderID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "order id required"})
+			return
+		}
+		parsedOrderID, err := uuid.Parse(orderID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid order id"})
+			return
+		}
+		order, err := repository.GetRestaurantOrderByID(ctx.Request.Context(), pool, parsedOrderID)
+		if err != nil {
+			if errors.Is(err, repository.ErrOrderNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		restaurant, err := getRestaurantByID(order.RestaurantID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		if restaurant.OwnerID != parsedUserID {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		if !validation.ValidateStatusTransition(order.Status, updateRole.Status) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid status transition"})
+			return
+		}
+		updatedOrder, err := repository.UpdateOrderStatusByOrderID(ctx.Request.Context(), pool, updateRole.Status, parsedOrderID)
+		if err != nil {
+			if errors.Is(err, repository.ErrOrderNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, updatedOrder)
 	}
 }

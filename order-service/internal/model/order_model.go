@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,4 +49,12 @@ type Restaurant struct {
 	OwnerID   uuid.UUID `json:"ownder_id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type UpdateOrderStatusRequest struct {
+	Status string `json:"status"`
+}
+
+func (r *UpdateOrderStatusRequest) Normalize() {
+	r.Status = strings.ToLower(strings.TrimSpace(r.Status))
 }
