@@ -19,7 +19,8 @@ const getCustomerOrdersQuery = `
 		restaurant_id,
 		total_cents,
 		status,
-		created_at
+		created_at,
+		updated_at
 	FROM orders
 	WHERE customer_id=$1
 	ORDER BY created_at DESC
@@ -40,7 +41,8 @@ const createOrderQuery = `
 		restaurant_id,
 		total_cents,
 		status,
-		created_at
+		created_at,
+		updated_at
 `
 
 const createOrderItemQuery = `
@@ -62,7 +64,8 @@ const getCustomerOrderByIDQuery = `
 		restaurant_id,
 		total_cents,
 		status,
-		created_at
+		created_at,
+		updated_at
 	FROM orders
 	WHERE id=$1
 	AND customer_id=$2
@@ -87,7 +90,8 @@ const getRestaurantOrderByIDQuery = `
 		restaurant_id,
 		total_cents,
 		status,
-		created_at
+		created_at,
+		updated_at
 	FROM orders
 	WHERE id=$1
 `
@@ -99,14 +103,17 @@ const getOrdersByRestaurantIDQuery = `
 		restaurant_id,
 		total_cents,
 		status,
-		created_at
+		created_at,
+		updated_at
 	FROM orders
 	WHERE restaurant_id=$1
 `
 
 const updateOrderStatusByOrderIDQuery = `
 	UPDATE orders
-	SET status = $1
+	SET 
+		status = $1,
+		updated_at = NOW()
 	WHERE id = $2
 	RETURNING
 		id,
@@ -114,7 +121,8 @@ const updateOrderStatusByOrderIDQuery = `
 		restaurant_id,
 		total_cents,
 		status,
-		created_at
+		created_at,
+		updated_at
 `
 
 func GetOrderItemsByOrderID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.UUID) ([]model.OrderItem, error) {
@@ -174,6 +182,7 @@ func GetCustomerOrders(ctx context.Context, pool *pgxpool.Pool, customerID uuid.
 			&order.TotalCents,
 			&order.Status,
 			&order.CreatedAt,
+			&order.UpdatedAt,
 		)
 		if err != nil {
 			return []model.Order{}, errors.New("internal server error")
@@ -212,6 +221,7 @@ func CreateOrder(ctx context.Context, pool *pgxpool.Pool, order model.Order, ite
 		&createOrderResponse.TotalCents,
 		&createOrderResponse.Status,
 		&createOrderResponse.CreatedAt,
+		&createOrderResponse.UpdatedAt,
 	)
 	if err != nil {
 		return model.Order{}, errors.New("internal server error")
@@ -252,6 +262,7 @@ func GetCustomerOrderByID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.
 		&order.TotalCents,
 		&order.Status,
 		&order.CreatedAt,
+		&order.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -307,6 +318,7 @@ func GetRestaurantOrderByID(ctx context.Context, pool *pgxpool.Pool, orderID uui
 		&order.TotalCents,
 		&order.Status,
 		&order.CreatedAt,
+		&order.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -339,6 +351,7 @@ func GetOrdersByRestaurantID(ctx context.Context, pool *pgxpool.Pool, restaurant
 			&order.TotalCents,
 			&order.Status,
 			&order.CreatedAt,
+			&order.UpdatedAt,
 		)
 		if err != nil {
 			return []model.Order{}, errors.New("internal server error")
@@ -369,6 +382,7 @@ func UpdateOrderStatusByOrderID(ctx context.Context, pool *pgxpool.Pool, newStat
 		&updatedOrder.TotalCents,
 		&updatedOrder.Status,
 		&updatedOrder.CreatedAt,
+		&updatedOrder.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

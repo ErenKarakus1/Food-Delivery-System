@@ -28,6 +28,7 @@ type Order struct {
 	TotalCents   int64     `json:"total_cents"`
 	Status       string    `json:"status"`
 	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type OrderRequest struct {

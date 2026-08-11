@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS orders (
     restaurant_id UUID NOT NULL,
     total_cents BIGINT NOT NULL,
     status TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
