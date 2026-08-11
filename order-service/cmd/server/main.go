@@ -20,7 +20,10 @@ func main() {
 	log.Println("Connected to Postgres!")
 
 	router := gin.Default()
-	router.GET("/orders", handler.GetCustomerOrdersHandler(pool))
-	router.POST("/orders", handler.CreateOrderHandler(pool))
+	router.GET("/orders/customer", handler.GetCustomerOrdersHandler(pool))
+	router.POST("orders/customer", handler.CreateCustomerOrderHandler(pool))
+	router.GET("orders/customer/:id", handler.GetCustomerOrderByIdHandler(pool))
+	router.GET("/orders/restaurant", handler.GetRestaurantOrdersHandler(pool))
+	router.GET("/orders/restaurant/:id", handler.GetRestaurantOrderByOrderIDHandler(pool))
 	router.Run(":8082")
 }

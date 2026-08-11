@@ -42,3 +42,10 @@ type MenuItem struct {
 	PriceCents   int64     `json:"price_cents"`
 	CreatedAt    time.Time `json:"created_at"`
 }
+
+type Restaurant struct {
+	ID        uuid.UUID `json:"id"`
+	OwnerID   uuid.UUID `json:"ownder_id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}

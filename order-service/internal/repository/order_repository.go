@@ -6,8 +6,11 @@ import (
 
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/model"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrOrderNotFound = errors.New("order not found")
 
 const getCustomerOrdersQuery = `
 	SELECT
@@ -50,6 +53,55 @@ const createOrderItemQuery = `
 		price_cents
 	)
 	VALUES ($1,$2,$3,$4,$5,$6)
+`
+
+const getCustomerOrderByIDQuery = `
+	SELECT
+		id,
+		customer_id,
+		restaurant_id,
+		total_cents,
+		status,
+		created_at
+	FROM orders
+	WHERE id=$1
+	AND customer_id=$2
+`
+
+const getOrderItemsByIDQuery = `
+	SELECT
+		id,
+		order_id,
+		menu_item_id,
+		quantity,
+		name,
+		price_cents
+	FROM order_items
+	WHERE order_id=$1
+`
+
+const getRestaurantOrderByIDQuery = `
+	SELECT
+		id,
+		customer_id,
+		restaurant_id,
+		total_cents,
+		status,
+		created_at
+	FROM orders
+	WHERE id=$1
+`
+
+const getOrdersByRestaurantIDQuery = `
+	SELECT
+		id,
+		customer_id,
+		restaurant_id,
+		total_cents,
+		status,
+		created_at
+	FROM orders
+	WHERE restaurant_id=$1
 `
 
 func GetCustomerOrders(ctx context.Context, pool *pgxpool.Pool, customerID uuid.UUID) ([]model.Order, error) {
@@ -135,4 +187,152 @@ func CreateOrder(ctx context.Context, pool *pgxpool.Pool, order model.Order, ite
 	}
 	return order, nil
 
+}
+
+func GetCustomerOrderByID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.UUID, customerID uuid.UUID) (model.Order, []model.OrderItem, error) {
+	var order model.Order
+	err := pool.QueryRow(
+		ctx,
+		getCustomerOrderByIDQuery,
+		orderID,
+		customerID,
+	).Scan(
+		&order.ID,
+		&order.CustomerID,
+		&order.RestaurantID,
+		&order.TotalCents,
+		&order.Status,
+		&order.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Order{}, []model.OrderItem{}, ErrOrderNotFound
+		}
+		return model.Order{}, []model.OrderItem{}, errors.New("internal server error")
+	}
+	var order_items []model.OrderItem
+	rows, err := pool.Query(
+		ctx,
+		getOrderItemsByIDQuery,
+		orderID,
+	)
+	if err != nil {
+		return model.Order{}, []model.OrderItem{}, errors.New("internal server error")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var item model.OrderItem
+		err := rows.Scan(
+			&item.ID,
+			&item.OrderID,
+			&item.MenuItemID,
+			&item.Quantity,
+			&item.Name,
+			&item.PriceCents,
+		)
+		if err != nil {
+			return model.Order{}, []model.OrderItem{}, errors.New("internal server error")
+		}
+		order_items = append(order_items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return model.Order{}, []model.OrderItem{}, errors.New("internal server error")
+	}
+	if order_items == nil {
+		order_items = []model.OrderItem{}
+	}
+	return order, order_items, nil
+}
+
+func GetRestaurantOrderByID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.UUID) (model.Order, []model.OrderItem, error) {
+	var order model.Order
+	err := pool.QueryRow(
+		ctx,
+		getRestaurantOrderByIDQuery,
+		orderID,
+	).Scan(
+		&order.ID,
+		&order.CustomerID,
+		&order.RestaurantID,
+		&order.TotalCents,
+		&order.Status,
+		&order.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Order{}, []model.OrderItem{}, ErrOrderNotFound
+		}
+		return model.Order{}, []model.OrderItem{}, errors.New("internal server error")
+	}
+	var order_items []model.OrderItem
+	rows, err := pool.Query(
+		ctx,
+		getOrderItemsByIDQuery,
+		orderID,
+	)
+	if err != nil {
+		return model.Order{}, []model.OrderItem{}, errors.New("internal server error")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var item model.OrderItem
+		err := rows.Scan(
+			&item.ID,
+			&item.OrderID,
+			&item.MenuItemID,
+			&item.Quantity,
+			&item.Name,
+			&item.PriceCents,
+		)
+		if err != nil {
+			return model.Order{}, []model.OrderItem{}, errors.New("internal server error")
+		}
+		order_items = append(order_items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return model.Order{}, []model.OrderItem{}, errors.New("internal server error")
+	}
+	if order_items == nil {
+		order_items = []model.OrderItem{}
+	}
+	return order, order_items, nil
+}
+
+func GetOrdersByRestaurantID(ctx context.Context, pool *pgxpool.Pool, restaurantID uuid.UUID) ([]model.Order, error) {
+	rows, err := pool.Query(
+		ctx,
+		getOrdersByRestaurantIDQuery,
+		restaurantID,
+	)
+	if err != nil {
+		return []model.Order{}, errors.New("internal server error")
+	}
+	defer rows.Close()
+
+	var orders []model.Order
+	for rows.Next() {
+		var order model.Order
+		err := rows.Scan(
+			&order.ID,
+			&order.CustomerID,
+			&order.RestaurantID,
+			&order.TotalCents,
+			&order.Status,
+			&order.CreatedAt,
+		)
+		if err != nil {
+			return []model.Order{}, errors.New("internal server error")
+		}
+		orders = append(orders, order)
+	}
+
+	if err := rows.Err(); err != nil {
+		return []model.Order{}, errors.New("internal server error")
+	}
+	if orders == nil {
+		orders = []model.Order{}
+	}
+	return orders, nil
 }

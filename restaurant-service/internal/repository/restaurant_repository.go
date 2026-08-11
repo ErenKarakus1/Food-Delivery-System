@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/ErenKarakus1/Food-Delivery-System/restaurant-service/internal/model"
 	"github.com/google/uuid"
@@ -75,6 +76,16 @@ const checkRestaurantExistsQuery = `
 	FROM restaurants
 	WHERE id=$1
 	LIMIT 1
+`
+
+const getRestaurantsByOwnerIDQuery = `
+	SELECT
+		id,
+		owner_id,
+		name,
+		created_at
+	FROM restaurants
+	WHERE owner_id=$1
 `
 
 func checkRestaurantExists(ctx context.Context, pool *pgxpool.Pool, restaurantID uuid.UUID) error {
@@ -226,4 +237,39 @@ func GetMenu(ctx context.Context, pool *pgxpool.Pool, restaurantID uuid.UUID) ([
 		menu = []model.MenuItem{}
 	}
 	return menu, nil
+}
+
+func GetRestaurantsByOwnerID(ctx context.Context, pool *pgxpool.Pool, ownerID uuid.UUID) ([]model.Restaurant, error) {
+	rows, err := pool.Query(
+		ctx,
+		getRestaurantsByOwnerIDQuery,
+		ownerID,
+	)
+	if err != nil {
+		log.Println(err)
+		return []model.Restaurant{}, errors.New("internal server error")
+	}
+	defer rows.Close()
+
+	var restaurants []model.Restaurant
+	for rows.Next() {
+		var restaurant model.Restaurant
+		err := rows.Scan(
+			&restaurant.ID,
+			&restaurant.OwnerID,
+			&restaurant.Name,
+			&restaurant.CreatedAt,
+		)
+		if err != nil {
+			return []model.Restaurant{}, errors.New("internal server error")
+		}
+		restaurants = append(restaurants, restaurant)
+	}
+	if err := rows.Err(); err != nil {
+		return []model.Restaurant{}, errors.New("internal server error")
+	}
+	if restaurants == nil {
+		return []model.Restaurant{}, ErrRestaurantNotFound
+	}
+	return restaurants, nil
 }

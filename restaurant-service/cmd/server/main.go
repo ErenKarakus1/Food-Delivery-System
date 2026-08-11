@@ -29,6 +29,7 @@ func main() {
 	router.GET("/restaurants", handler.GetAllRestaurants(pool))
 	router.GET("/restaurants/:id/menu", handler.GetMenu(pool))
 	router.GET("/restaurants/:id", handler.GetRestauranByIDHandler(pool))
+	router.GET("/restaurants/me", handler.GetMyRestaurants(pool))
 
 	router.Run(":8081")
 }

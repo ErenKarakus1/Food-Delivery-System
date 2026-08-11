@@ -114,3 +114,37 @@ func GetMenu(pool *pgxpool.Pool) gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, menu)
 	}
 }
+
+func GetMyRestaurants(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ownerID := ctx.GetHeader("X-User-ID")
+		if ownerID == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user id required"})
+			return
+		}
+		parsedOwnerID, err := uuid.Parse(ownerID)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user id"})
+			return
+		}
+		role := ctx.GetHeader("X-User-Role")
+		if role == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "role required"})
+			return
+		}
+		if role != "restaurant" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		restaurants, err := repository.GetRestaurantsByOwnerID(ctx.Request.Context(), pool, parsedOwnerID)
+		if err != nil {
+			if errors.Is(err, repository.ErrRestaurantNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrRestaurantNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, restaurants)
+	}
+}
