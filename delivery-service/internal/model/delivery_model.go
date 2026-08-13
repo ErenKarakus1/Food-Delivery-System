@@ -31,3 +31,13 @@ type DeliveryRejecetion struct {
 	CourierID  uuid.UUID `json:"courier_id"`
 	CreatedAt  time.Time `json:"created_at"`
 }
+
+type Order struct {
+	ID           uuid.UUID `json:"id"`
+	CustomerID   uuid.UUID `json:"customer_id"`
+	RestaurantID uuid.UUID `json:"restaurant_id"`
+	TotalCents   int64     `json:"total_cents"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}

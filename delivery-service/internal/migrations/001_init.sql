@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS deliveries (
     id UUID PRIMARY KEY,
     order_id UUID NOT NULL UNIQUE,
     courier_id UUID NOT NULL,
-    status TEXT NOT NULL DEFAULT 'ready_for_pickup',
+    status TEXT NOT NULL DEFAULT 'waiting_for_courier',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

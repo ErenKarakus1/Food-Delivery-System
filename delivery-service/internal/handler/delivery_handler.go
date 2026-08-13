@@ -18,7 +18,7 @@ import (
 )
 
 func updateStatusOrderService(orderID uuid.UUID, status string) error {
-	url := fmt.Sprintf("http://localhost:8082/order/courier/%s", orderID)
+	url := fmt.Sprintf("http://localhost:8082/orders/courier/%s", orderID)
 	body := map[string]string{
 		"status": status,
 	}

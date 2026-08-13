@@ -12,3 +12,11 @@ func CreateDeliveryRejection(deliveryID uuid.UUID, courierID uuid.UUID) model.De
 		CourierID:  courierID,
 	}
 }
+
+func CreateDelivery(orderID uuid.UUID) model.Delivery {
+	return model.Delivery{
+		ID:        uuid.New(),
+		OrderID:   orderID,
+		CourierID: uuid.Nil,
+	}
+}

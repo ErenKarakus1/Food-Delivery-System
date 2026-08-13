@@ -29,5 +29,6 @@ func main() {
 	router.GET("/orders/courier/ready-for-pickup", handler.GetOrdersReadyForPickupHandler(pool))
 	router.GET("/orders/courier/:id", handler.GetCourierOrderByOrderIDHandler(pool))
 	router.PATCH("/orders/courier/:id", handler.UpdateCourierOrderStatusHandler(pool))
+	router.PATCH("/orders/courier/:id/delivery_created", handler.DeliveryCreatedHandler(pool))
 	router.Run(":8082")
 }

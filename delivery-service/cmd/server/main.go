@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/ErenKarakus1/Food-Delivery-System/delivery-service/internal/config"
 	"github.com/ErenKarakus1/Food-Delivery-System/delivery-service/internal/db"
 	"github.com/ErenKarakus1/Food-Delivery-System/delivery-service/internal/handler"
+	"github.com/ErenKarakus1/Food-Delivery-System/delivery-service/internal/worker"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,6 +21,8 @@ func main() {
 	defer pool.Close()
 	log.Println("Connected to Postgres!")
 
+	worker := worker.NewWorker(pool)
+	go worker.Start(context.Background())
 	router := gin.Default()
 
 	router.GET("/couriers/me", handler.GetMeHandler(pool))

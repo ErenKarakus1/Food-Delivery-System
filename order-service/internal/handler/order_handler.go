@@ -542,3 +542,37 @@ func GetCourierOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, order)
 	}
 }
+
+func DeliveryCreatedHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		role := ctx.GetHeader("X-User-Role")
+		if role == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "role required"})
+			return
+		}
+		if role != "courier" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		orderID := ctx.Param("id")
+		if orderID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "order id required"})
+			return
+		}
+		parsedOrderID, err := uuid.Parse(orderID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid order id"})
+			return
+		}
+		_, err = repository.UpdateOrderStatusByOrderID(ctx.Request.Context(), pool, "delivery_created", parsedOrderID)
+		if err != nil {
+			if errors.Is(err, repository.ErrOrderNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrOrderNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.Status(http.StatusOK)
+	}
+}

@@ -16,7 +16,7 @@ func ValidateStatus(status string) bool {
 func ValidateStatusTransition(currentStatus string, updateStatus string) bool {
 	switch updateStatus {
 	case "rejected", "picked_by_courier":
-		return currentStatus == "ready_for_pickup"
+		return currentStatus == "assigned"
 	case "delivered":
 		return currentStatus == "picked_by_courier"
 	default:
