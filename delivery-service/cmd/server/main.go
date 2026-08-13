@@ -21,6 +21,7 @@ func main() {
 
 	router := gin.Default()
 
+	router.GET("/couriers/me", handler.GetMeHandler(pool))
 	router.PATCH("/couriers/me/available", handler.AvailableHandler(pool))
 	router.PATCH("/couriers/me/unavailable", handler.UnavailableHandler(pool))
 	router.GET("/deliveries/me", handler.GetCurrentDeliveryHandler(pool))

@@ -150,7 +150,6 @@ func AvailableHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		ctx.JSON(http.StatusConflict, gin.H{"error": "delivery is active"})
-		return
 	}
 }
 
@@ -326,5 +325,39 @@ func RejectDeliveryHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		ctx.Status(http.StatusOK)
+	}
+}
+
+func GetMeHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		role := ctx.GetHeader("X-User-Role")
+		if role == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "role required"})
+			return
+		}
+		if role != "courier" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		courierID := ctx.GetHeader("X-User-ID")
+		if courierID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "courier id required"})
+			return
+		}
+		parsedCourierID, err := uuid.Parse(courierID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid courier id"})
+			return
+		}
+		courier, err := repository.GetCourierByID(ctx.Request.Context(), pool, parsedCourierID)
+		if err != nil {
+			if errors.Is(err, repository.ErrCourierNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrCourierNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, courier)
 	}
 }
