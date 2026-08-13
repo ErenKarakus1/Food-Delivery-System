@@ -5,6 +5,7 @@ import (
 
 	"github.com/ErenKarakus1/Food-Delivery-System/delivery-service/internal/config"
 	"github.com/ErenKarakus1/Food-Delivery-System/delivery-service/internal/db"
+	"github.com/ErenKarakus1/Food-Delivery-System/delivery-service/internal/handler"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,5 +21,11 @@ func main() {
 
 	router := gin.Default()
 
+	router.PATCH("/couriers/me/available", handler.AvailableHandler(pool))
+	router.PATCH("/couriers/me/unavailable", handler.UnavailableHandler(pool))
+	router.GET("/deliveries/me", handler.GetCurrentDeliveryHandler(pool))
+	router.PATCH("/deliveries/me/pickup", handler.PickUpDeliveryStatusHandler(pool))
+	router.PATCH("/deliveries/me/deliver", handler.DeliverDeliveryStatusHandler(pool))
+	router.PATCH("/deliveries/me/reject", handler.RejectDeliveryHandler(pool))
 	router.Run(":8083")
 }

@@ -360,7 +360,7 @@ func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		updateStatus.Normalize()
-		if !validation.ValidateStatusRequest(updateStatus.Status) {
+		if !validation.ValidateStatusRequestRestaurant(updateStatus.Status) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
 			return
 		}
@@ -411,7 +411,7 @@ func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			return
 		}
-		if !validation.ValidateStatusTransition(order.Status, updateStatus.Status) {
+		if !validation.ValidateRestaurantStatusTransition(order.Status, updateStatus.Status) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid status transition"})
 			return
 		}
