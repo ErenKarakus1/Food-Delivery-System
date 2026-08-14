@@ -21,11 +21,20 @@ func getRestaurantByID(restaurantID uuid.UUID) (model.Restaurant, error) {
 		"http://localhost:8081/restaurants/%s",
 		restaurantID,
 	)
-
-	resp, err := http.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return model.Restaurant{}, errors.New("internal server error")
 	}
+
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return model.Restaurant{}, errors.New("restaurant service error")
+	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
@@ -77,11 +86,19 @@ func getMyRestaurants(userID uuid.UUID, role string) ([]model.Restaurant, error)
 
 func returnMenuItem(key uuid.UUID) (model.MenuItem, error) {
 	url := fmt.Sprintf("http://localhost:8081/menu-items/%s", key)
-	resp, err := http.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return model.MenuItem{}, errors.New("internal server error")
 	}
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return model.MenuItem{}, errors.New("restaurant service error")
+	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode == http.StatusNotFound {
 		return model.MenuItem{}, errors.New("menu item not found")
 	}
