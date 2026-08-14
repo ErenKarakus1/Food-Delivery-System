@@ -355,6 +355,7 @@ and creates deliveries automatically.
 
 ## Future Improvements
 
+* Docker support
 * Kafka support
 * Redis caching
 * Distributed tracing
