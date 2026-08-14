@@ -361,3 +361,24 @@ func GetMeHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, courier)
 	}
 }
+
+func CreateCourierHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var req model.CreateCourierRequest
+		if err := ctx.ShouldBindJSON(&req); err != nil {
+			ctx.JSON(http.StatusBadRequest, errors.New("invalid create courier request body"))
+			return
+		}
+		parsedRequestID, err := uuid.Parse(req.ID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid create courier id"})
+			return
+		}
+		err = repository.CreateCourier(ctx.Request.Context(), pool, parsedRequestID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.Status(http.StatusOK)
+	}
+}

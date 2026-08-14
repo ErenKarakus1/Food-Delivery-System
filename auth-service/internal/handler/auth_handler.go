@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/jwt"
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/model"
@@ -11,8 +14,33 @@ import (
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/service"
 	"github.com/ErenKarakus1/Food-Delivery-System/auth-service/internal/validation"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+func createCourier(courierID uuid.UUID) error {
+	url := "http://localhost:8083/couriers/create"
+	payload := map[string]string{
+		"id": courierID.String(),
+	}
+	jsonBody, err := json.Marshal(payload)
+	if err != nil {
+		return errors.New("internal server error")
+	}
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonBody))
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return errors.New("delivery service error")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("delivery service error")
+	}
+	return nil
+}
 
 func RegisterHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -39,6 +67,13 @@ func RegisterHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			}
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
+		}
+		if createdUser.Role == "courier" {
+			err := createCourier(createdUser.ID)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			}
 		}
 		ctx.JSON(http.StatusCreated, registerResponse)
 	}

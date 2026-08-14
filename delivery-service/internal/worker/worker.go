@@ -67,6 +67,8 @@ func assignCouriersToDeliveries(ctx context.Context, pool *pgxpool.Pool, deliver
 		if err := repository.AssignDelivery(ctx, pool, delivery.ID, courier.ID); err != nil {
 			continue
 		}
+		repository.SetUnavailable(ctx, pool, courier.ID)
+
 	}
 }
 

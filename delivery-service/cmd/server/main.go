@@ -25,6 +25,7 @@ func main() {
 	go worker.Start(context.Background())
 	router := gin.Default()
 
+	router.POST("/couriers/create", handler.CreateCourierHandler(pool))
 	router.GET("/couriers/me", handler.GetMeHandler(pool))
 	router.PATCH("/couriers/me/available", handler.AvailableHandler(pool))
 	router.PATCH("/couriers/me/unavailable", handler.UnavailableHandler(pool))

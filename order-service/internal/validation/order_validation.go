@@ -44,7 +44,7 @@ func ValidateCourierStatusRequest(status string) bool {
 func ValidateCourierStatusTransition(currentStatus string, updateStatus string) bool {
 	switch updateStatus {
 	case "picked_by_courier":
-		return currentStatus == "ready_for_pickup"
+		return currentStatus == "delivery_created"
 	case "delivered":
 		return currentStatus == "picked_by_courier"
 	default:

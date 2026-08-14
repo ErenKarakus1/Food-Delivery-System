@@ -98,7 +98,7 @@ const createDeliveryQuery = `
 	INSERT INTO deliveries (
 		id,
 		order_id,
-		courier_id,
+		courier_id
 	)
 	VALUES ($1, $2, $3)
 	ON CONFLICT (order_id) DO NOTHING
@@ -130,6 +130,13 @@ const getDeliveriesWaitingAssignmentQuery = `
 		updated_at
 	FROM deliveries
 	WHERE status='waiting_for_courier'
+`
+
+const createCourierQuery = `
+	INSERT INTO couriers (
+		id
+	)
+	VALUES ($1)
 `
 
 func GetCurrentDeliveryByCourierID(ctx context.Context, pool *pgxpool.Pool, courierID uuid.UUID) (model.Delivery, error) {
@@ -341,4 +348,16 @@ func GetDeliveriesWaitingAssignment(ctx context.Context, pool *pgxpool.Pool) ([]
 		deliveries = []model.Delivery{}
 	}
 	return deliveries, nil
+}
+
+func CreateCourier(ctx context.Context, pool *pgxpool.Pool, courierID uuid.UUID) error {
+	_, err := pool.Exec(
+		ctx,
+		createCourierQuery,
+		courierID,
+	)
+	if err != nil {
+		return errors.New("internal server error")
+	}
+	return nil
 }
