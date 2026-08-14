@@ -51,10 +51,20 @@ func insertNewDeliveriesFromOrders(ctx context.Context, pool *pgxpool.Pool, clie
 			continue
 		}
 		url := fmt.Sprintf("http://localhost:8082/orders/courier/%s/delivery_created", order.ID)
-		req, _ := http.NewRequest(http.MethodPatch, url, nil)
+		req, err := http.NewRequest(http.MethodPatch, url, nil)
+		if err != nil {
+			continue
+		}
 		req.Header.Set("X-User-Role", "courier")
 
-		client.Do(req)
+		resp, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			continue
+		}
 	}
 }
 
@@ -67,12 +77,14 @@ func assignCouriersToDeliveries(ctx context.Context, pool *pgxpool.Pool, deliver
 		if err := repository.AssignDelivery(ctx, pool, delivery.ID, courier.ID); err != nil {
 			continue
 		}
-		repository.SetUnavailable(ctx, pool, courier.ID)
+		if err := repository.SetUnavailable(ctx, pool, courier.ID); err != nil {
+			continue
+		}
 
 	}
 }
 
-func (w *Worker) Poll(ctx context.Context) {
+func (w *Worker) poll(ctx context.Context) {
 	orders, err := getOrdersReadyForPickup(w.httpClient)
 	if err != nil {
 		return
@@ -88,11 +100,11 @@ func (w *Worker) Poll(ctx context.Context) {
 func (w *Worker) Start(ctx context.Context) {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
-	w.Poll(ctx)
+	w.poll(ctx)
 	for {
 		select {
 		case <-ticker.C:
-			w.Poll(ctx)
+			w.poll(ctx)
 		case <-ctx.Done():
 			return
 		}
