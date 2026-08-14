@@ -6,6 +6,7 @@ import (
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/config"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/db"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/handler"
+	"github.com/ErenKarakus1/Food-Delivery-System/order-service/rabbitmq"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,7 +18,14 @@ func main() {
 		log.Fatal(err)
 	}
 	defer pool.Close()
+
 	log.Println("Connected to Postgres!")
+
+	publisher, err := rabbitmq.NewPublisher(cfg.RabbitmqURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer publisher.Close()
 
 	router := gin.Default()
 	router.GET("/orders/customer", handler.GetCustomerOrdersHandler(pool))
@@ -25,7 +33,7 @@ func main() {
 	router.GET("/orders/customer/:id", handler.GetCustomerOrderByIdHandler(pool))
 	router.GET("/orders/restaurant", handler.GetRestaurantOrdersHandler(pool))
 	router.GET("/orders/restaurant/:id", handler.GetRestaurantOrderByOrderIDHandler(pool))
-	router.PATCH("/orders/restaurant/:id", handler.ChangeRestaurantOrderStatusHandler(pool))
+	router.PATCH("/orders/restaurant/:id", handler.ChangeRestaurantOrderStatusHandler(pool, publisher))
 	router.GET("/orders/courier/ready-for-pickup", handler.GetOrdersReadyForPickupHandler(pool))
 	router.GET("/orders/courier/:id", handler.GetCourierOrderByOrderIDHandler(pool))
 	router.PATCH("/orders/courier/:id", handler.UpdateCourierOrderStatusHandler(pool))

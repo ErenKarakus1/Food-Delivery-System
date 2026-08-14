@@ -45,3 +45,7 @@ type Order struct {
 type CreateCourierRequest struct {
 	ID string `json:"id"`
 }
+
+type OrderReadyForPickupEvent struct {
+	OrderID string `json:"order_id"`
+}

@@ -11,6 +11,7 @@ import (
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/repository"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/service"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/validation"
+	"github.com/ErenKarakus1/Food-Delivery-System/order-service/rabbitmq"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -369,7 +370,7 @@ func GetRestaurantOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
-func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool, publisher *rabbitmq.Publisher) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var updateStatus model.UpdateOrderStatusRequest
 		if err := ctx.ShouldBindJSON(&updateStatus); err != nil {
@@ -440,6 +441,13 @@ func ChangeRestaurantOrderStatusHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			}
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			return
+		}
+		if updateStatus.Status == "ready_for_pickup" {
+			err := publisher.PublishOrderReady(updatedOrder.ID)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			}
 		}
 		ctx.JSON(http.StatusOK, updatedOrder)
 	}

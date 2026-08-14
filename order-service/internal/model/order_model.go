@@ -67,3 +67,7 @@ type CourierUpdateOrderStatusRequest struct {
 func (r *CourierUpdateOrderStatusRequest) Normalize() {
 	r.Status = strings.ToLower(strings.TrimSpace(r.Status))
 }
+
+type OrderReadyForPickupEvent struct {
+	OrderID string `json:"order_id"`
+}
