@@ -382,3 +382,31 @@ func CreateCourierHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 		ctx.Status(http.StatusOK)
 	}
 }
+
+func GetDeliveryByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var req model.GetDeliveryByOrderIDRequest
+		if err := ctx.ShouldBindJSON(&req); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+			return
+		}
+		if req.OrderID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "order id required"})
+			return
+		}
+		orderID, err := uuid.Parse(req.OrderID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid order id"})
+			return
+		}
+		delivery, err := repository.GetDeliveryByOrderID(ctx.Request.Context(), pool, orderID)
+		if err != nil {
+			if errors.Is(err, repository.ErrDeliveryNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": repository.ErrDeliveryNotFound.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		ctx.JSON(http.StatusOK, delivery)
+	}
+}

@@ -71,3 +71,12 @@ func (r *CourierUpdateOrderStatusRequest) Normalize() {
 type OrderReadyForPickupEvent struct {
 	OrderID string `json:"order_id"`
 }
+
+type Delivery struct {
+	ID        uuid.UUID `json:"id"`
+	OrderID   uuid.UUID `json:"order_id"`
+	CourierID uuid.UUID `json:"courier_id"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

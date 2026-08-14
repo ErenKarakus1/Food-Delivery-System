@@ -37,5 +37,6 @@ func main() {
 	router.PATCH("/deliveries/me/pickup", handler.PickUpDeliveryStatusHandler(pool))
 	router.PATCH("/deliveries/me/deliver", handler.DeliverDeliveryStatusHandler(pool))
 	router.PATCH("/deliveries/me/reject", handler.RejectDeliveryHandler(pool))
+	router.GET("/deliveries/:id", handler.GetDeliveryByOrderIDHandler(pool))
 	router.Run(":8083")
 }

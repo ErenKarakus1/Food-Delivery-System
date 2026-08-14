@@ -139,6 +139,18 @@ const createCourierQuery = `
 	VALUES ($1)
 `
 
+const getDeliveryByOrderIDQuery = `
+	SELECT
+		id,
+		order_id,
+		courier_id,
+		status,
+		created_at,
+		updated_at
+	FROM deliveries
+	WHERE order_id=$1
+`
+
 func GetCurrentDeliveryByCourierID(ctx context.Context, pool *pgxpool.Pool, courierID uuid.UUID) (model.Delivery, error) {
 	var delivery model.Delivery
 	err := pool.QueryRow(
@@ -360,4 +372,27 @@ func CreateCourier(ctx context.Context, pool *pgxpool.Pool, courierID uuid.UUID)
 		return errors.New("internal server error")
 	}
 	return nil
+}
+
+func GetDeliveryByOrderID(ctx context.Context, pool *pgxpool.Pool, orderID uuid.UUID) (model.Delivery, error) {
+	var delivery model.Delivery
+	err := pool.QueryRow(
+		ctx,
+		getDeliveryByOrderIDQuery,
+		orderID,
+	).Scan(
+		&delivery.ID,
+		&delivery.OrderID,
+		&delivery.CourierID,
+		&delivery.Status,
+		&delivery.CreatedAt,
+		&delivery.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Delivery{}, ErrDeliveryNotFound
+		}
+		return model.Delivery{}, errors.New("internal server error")
+	}
+	return delivery, nil
 }

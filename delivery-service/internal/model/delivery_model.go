@@ -49,3 +49,7 @@ type CreateCourierRequest struct {
 type OrderReadyForPickupEvent struct {
 	OrderID string `json:"order_id"`
 }
+
+type GetDeliveryByOrderIDRequest struct {
+	OrderID string `json:"order_id"`
+}

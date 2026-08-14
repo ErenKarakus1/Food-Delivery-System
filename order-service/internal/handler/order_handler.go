@@ -17,6 +17,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var ErrDeliveryNotFound = errors.New("Delivery not found")
+
 func getRestaurantByID(restaurantID uuid.UUID) (model.Restaurant, error) {
 	url := fmt.Sprintf(
 		"http://localhost:8081/restaurants/%s",
@@ -112,6 +114,35 @@ func returnMenuItem(key uuid.UUID) (model.MenuItem, error) {
 		return model.MenuItem{}, errors.New("internal server error")
 	}
 	return menuItem, nil
+}
+
+func getDelivery(orderID uuid.UUID) (model.Delivery, error) {
+	url := fmt.Sprintf("http://localhost:8083/orders/courier/%s", orderID.String())
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return model.Delivery{}, errors.New("internal server error")
+	}
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return model.Delivery{}, errors.New("delivery service error")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return model.Delivery{}, ErrDeliveryNotFound
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return model.Delivery{}, errors.New("delivery service error")
+	}
+	var delivery model.Delivery
+	if err := json.NewDecoder(resp.Body).Decode(&delivery); err != nil {
+		return model.Delivery{}, errors.New("internal server error")
+	}
+	return delivery, nil
 }
 
 func createOrderItems(items []model.OrderItemRequest, orderID uuid.UUID) ([]model.OrderItem, error) {
@@ -541,6 +572,16 @@ func GetCourierOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			return
 		}
+		userID := ctx.GetHeader("X-User-ID")
+		if userID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "user id required"})
+			return
+		}
+		parsedUserID, err := uuid.Parse(userID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+			return
+		}
 		orderID := ctx.Param("id")
 		if orderID == "" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "order id required"})
@@ -558,6 +599,19 @@ func GetCourierOrderByOrderIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 				return
 			}
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		delivery, err := getDelivery(order.ID)
+		if err != nil {
+			if errors.Is(err, ErrDeliveryNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "delivery not found"})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal service error"})
+			return
+		}
+		if delivery.CourierID != parsedUserID {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			return
 		}
 		if !validation.ValidateCourierStatusRequest(order.Status) {
