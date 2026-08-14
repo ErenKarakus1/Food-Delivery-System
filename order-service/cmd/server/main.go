@@ -21,8 +21,8 @@ func main() {
 
 	router := gin.Default()
 	router.GET("/orders/customer", handler.GetCustomerOrdersHandler(pool))
-	router.POST("orders/customer", handler.CreateCustomerOrderHandler(pool))
-	router.GET("orders/customer/:id", handler.GetCustomerOrderByIdHandler(pool))
+	router.POST("/orders/customer", handler.CreateCustomerOrderHandler(pool))
+	router.GET("/orders/customer/:id", handler.GetCustomerOrderByIdHandler(pool))
 	router.GET("/orders/restaurant", handler.GetRestaurantOrdersHandler(pool))
 	router.GET("/orders/restaurant/:id", handler.GetRestaurantOrderByOrderIDHandler(pool))
 	router.PATCH("/orders/restaurant/:id", handler.ChangeRestaurantOrderStatusHandler(pool))

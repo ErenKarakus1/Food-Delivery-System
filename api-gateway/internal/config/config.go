@@ -8,8 +8,7 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	JWT_SECRET  string
+	JWT_SECRET string
 }
 
 func LoadConfig() Config {
@@ -18,8 +17,7 @@ func LoadConfig() Config {
 		log.Fatal("Error loading .env file")
 	}
 	return Config{
-		DatabaseURL: getEnv("DATABASE_URL"),
-		JWT_SECRET:  getEnv("JWT_SECRET"),
+		JWT_SECRET: getEnv("JWT_SECRET"),
 	}
 }
 

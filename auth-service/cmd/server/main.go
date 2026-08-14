@@ -20,7 +20,7 @@ func main() {
 	log.Println("Connected to Postgres!")
 
 	router := gin.Default()
-	router.POST("/register", handler.RegisterHandler(pool))
-	router.POST("/login", handler.LoginHandler(pool, cfg.JWT_sECRET))
-	router.Run(":8080")
+	router.POST("/auth/register", handler.RegisterHandler(pool))
+	router.POST("/auth/login", handler.LoginHandler(pool, cfg.JWT_SECRET))
+	router.Run(":8084")
 }
