@@ -49,7 +49,6 @@ func main() {
 		protected.GET("/orders/restaurant/:id", orderProxy)
 		protected.PATCH("/orders/restaurant/:id", orderProxy)
 		protected.GET("/orders/courier/:id", orderProxy)
-		protected.PATCH("/orders/courier/:id", orderProxy)
 	}
 	router.Run(":8080")
 }
