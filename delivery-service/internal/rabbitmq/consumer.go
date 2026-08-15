@@ -60,7 +60,7 @@ func (c *Consumer) Start(ctx context.Context) error {
 	msgs, err := c.ch.Consume(
 		c.queue.Name,
 		"",
-		true,
+		false,
 		false,
 		false,
 		false,
@@ -79,11 +79,18 @@ func (c *Consumer) Start(ctx context.Context) error {
 			}
 			var event model.OrderReadyForPickupEvent
 			if err := json.Unmarshal(msg.Body, &event); err != nil {
+				msg.Nack(false, false)
 				continue
 			}
 			if err := c.handleOrderReady(ctx, event); err != nil {
+				if errors.Is(err, repository.ErrCourierNotFound) {
+					msg.Nack(false, true)
+				} else {
+					msg.Nack(false, false)
+				}
 				continue
 			}
+			msg.Ack(false)
 		}
 	}
 }
@@ -93,12 +100,25 @@ func (c *Consumer) handleOrderReady(ctx context.Context, event model.OrderReadyF
 	if err != nil {
 		return errors.New("invalid order id")
 	}
-	delivery := service.CreateDelivery(orderID)
-	if err := repository.CreateDelivery(ctx, c.pool, delivery); err != nil {
-		return errors.New("internal server error")
+	delivery, err := repository.GetDeliveryByOrderID(ctx, c.pool, orderID)
+	if err != nil {
+		if errors.Is(err, repository.ErrDeliveryNotFound) {
+			delivery = service.CreateDelivery(orderID)
+			if err := repository.CreateDelivery(ctx, c.pool, delivery); err != nil {
+				return errors.New("internal server error")
+			}
+		} else {
+			return errors.New("internal server error")
+		}
+	}
+	if delivery.CourierID != uuid.Nil {
+		return nil
 	}
 	courier, err := repository.GetAvailableCourierForDelivery(ctx, c.pool, delivery.ID)
 	if err != nil {
+		if errors.Is(err, repository.ErrCourierNotFound) {
+			return repository.ErrCourierNotFound
+		}
 		return errors.New("internal server error")
 	}
 	if err := repository.AssignDelivery(ctx, c.pool, delivery.ID, courier.ID); err != nil {

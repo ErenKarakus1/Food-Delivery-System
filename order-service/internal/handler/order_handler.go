@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/model"
+	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/rabbitmq"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/repository"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/service"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/validation"
-	"github.com/ErenKarakus1/Food-Delivery-System/order-service/rabbitmq"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"

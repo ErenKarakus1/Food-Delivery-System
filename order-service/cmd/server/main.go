@@ -6,7 +6,7 @@ import (
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/config"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/db"
 	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/handler"
-	"github.com/ErenKarakus1/Food-Delivery-System/order-service/rabbitmq"
+	"github.com/ErenKarakus1/Food-Delivery-System/order-service/internal/rabbitmq"
 	"github.com/gin-gonic/gin"
 )
 
