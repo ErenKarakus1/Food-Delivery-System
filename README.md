@@ -198,7 +198,7 @@ Each service ships its own migration file — apply each to its own database:
 auth-service/migrations/001_init.sql
 restaurant-service/migrations/001_init.sql
 order-service/migrations/001_init.sql
-delivery-service/internal/migrations/001_init.sql
+delivery-service/migrations/001_init.sql
 ```
 
 ### 3. Configure environment variables
