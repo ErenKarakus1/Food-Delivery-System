@@ -18,10 +18,10 @@ flowchart LR
     Gateway --> Order
     Gateway --> Delivery
 
-    Order --> PostgreSQL1[(PostgreSQL)]
-    Restaurant --> PostgreSQL2[(PostgreSQL)]
-    Delivery --> PostgreSQL3[(PostgreSQL)]
-    Auth --> PostgreSQL4[(PostgreSQL)]
+    Order --> OrderDB[(Order DB)]
+    Restaurant --> RestaurantDB[(Restaurant DB)]
+    Delivery --> DeliveryDB[(Delivery DB)]
+    Auth --> AuthDB[(Auth DB)]
 
     Order --> RabbitMQ[(RabbitMQ)]
     RabbitMQ --> Delivery
@@ -70,7 +70,7 @@ Responsible for:
 
 * Courier management
 * Delivery creation
-* Courier assignment
+* Event-driven courier assignment
 * Delivery lifecycle tracking
 * Consuming RabbitMQ events
 
@@ -113,6 +113,20 @@ Responsible for:
 
 ---
 
+## Features
+
+* JWT Authentication
+* Role-based authorization
+* Independent microservices
+* Event-driven delivery assignment with RabbitMQ
+* Automatic courier assignment with retry and requeue support
+* Restaurant menu management
+* Order lifecycle tracking
+* API Gateway routing
+* Database-per-service architecture
+
+---
+
 ## Order Lifecycle
 
 ### Restaurant Flow
@@ -127,8 +141,10 @@ stateDiagram-v2
     accepted --> preparing
     preparing --> ready_for_pickup
 
-    ready_for_pickup --> picked_by_courier
+    ready_for_pickup --> delivery_created
+    delivery_created --> picked_by_courier
     picked_by_courier --> delivered
+
 
     rejected --> [*]
     delivered --> [*]
@@ -150,16 +166,45 @@ sequenceDiagram
     RabbitMQ->>Delivery: Consume event
     Delivery->>Delivery: Create delivery
     Delivery->>Delivery: Assign courier
-    Delivery->>Order: Mark delivery_created
+    Delivery->>Order: Update status to delivery_created
 ```
 
+---
+
+## Courier Assignment Retry Flow
+
+```mermaid
+flowchart LR
+    A[Restaurant sets ready_for_pickup]
+    B[Order Service publishes event]
+    C[RabbitMQ]
+    D[Delivery Service consumes event]
+    E[Create delivery]
+    F{Courier available?}
+    G[Assign courier]
+    H[Mark delivery_created]
+    I[Requeue event]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+
+    F -->|Yes| G
+    G --> H
+
+    F -->|No| I
+    I --> C
+
+```
 The Delivery Service:
 
-1. Creates a delivery
-2. Finds an available courier
-3. Assigns the courier
-4. Marks the courier unavailable
-5. Updates order status accordingly
+
+1. Creates a delivery record
+2. Attempts to find an available courier
+3. If a courier exists, assigns the courier, marks the courier unavailable, and updates the order status to delivery_created
+4. If no courier is available, the RabbitMQ message is requeued and retried later
 
 ---
 
@@ -240,9 +285,9 @@ RABBITMQ_URL=amqp://guest:guest@localhost:5672/
 Start RabbitMQ and Postgres, then in separate terminals:
 
 ```bash
-cd auth-service         && go run ./cmd/server   # :8084
-cd restaurant-service    && go run ./cmd/server   # :8081
-cd order-service         && go run ./cmd/server   # :8082
+cd auth-service           && go run ./cmd/server   # :8084
+cd restaurant-service     && go run ./cmd/server   # :8081
+cd order-service          && go run ./cmd/server   # :8082
 cd delivery-service       && go run ./cmd/server   # :8083
 cd api-gateway            && go run ./cmd/server   # :8080
 ```
@@ -341,7 +386,7 @@ Delivery Service consumes:
 order.ready_for_pickup
 ```
 
-and creates deliveries automatically.
+and automatically creates deliveries and assigns couriers. If no courier is available, the message is requeued and retried later.
 
 ---
 
@@ -361,6 +406,8 @@ and creates deliveries automatically.
 ## Future Improvements
 
 * Docker support
+* Dead-letter queues (DLQ)
+* Delayed retries / backoff queues
 * Kafka support
 * Redis caching
 * Distributed tracing
@@ -369,4 +416,3 @@ and creates deliveries automatically.
 * Circuit breakers
 * Kubernetes deployment
 * Monitoring & observability
-
