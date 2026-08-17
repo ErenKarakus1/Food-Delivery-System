@@ -5,7 +5,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
 
-A food delivery platform built as a set of independent Go microservices, fronted by a single API gateway. Customers order from restaurants, restaurant owners manage menus and fulfill orders, and couriers pick up and deliver them.
+An event-driven food delivery platform built as a set of independent Go microservices, fronted by a single API gateway. Customers order from restaurants, restaurant owners manage menus and fulfill orders, and couriers pick up and deliver them.
 
 ## Architecture
 
