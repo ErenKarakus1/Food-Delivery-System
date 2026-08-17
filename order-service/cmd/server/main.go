@@ -25,6 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Connected to RabbitMQ!")
 	defer publisher.Close()
 
 	router := gin.Default()

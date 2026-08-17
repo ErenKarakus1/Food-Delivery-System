@@ -25,6 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Connected to RabbitMQ!")
 	defer consumer.Close()
 	go consumer.Start(context.Background())
 	router := gin.Default()
