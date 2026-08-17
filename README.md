@@ -203,7 +203,7 @@ The Delivery Service:
 
 1. Creates a delivery record
 2. Attempts to find an available courier
-3. If a courier exists, assigns the courier, marks the courier unavailable, and updates the order status to delivery_created
+3. If a courier exists, assigns the courier, marks the courier unavailable, and updates the order status to `delivery_created`
 4. If no courier is available, the RabbitMQ message is requeued and retried later
 
 ---
