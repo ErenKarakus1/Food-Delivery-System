@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/ErenKarakus1/Food-Delivery-System/api-gateway/internal/config"
 	"github.com/ErenKarakus1/Food-Delivery-System/api-gateway/internal/middleware"
 	"github.com/ErenKarakus1/Food-Delivery-System/api-gateway/internal/proxy"
@@ -50,5 +52,7 @@ func main() {
 		protected.PATCH("/orders/restaurant/:id", orderProxy)
 		protected.GET("/orders/courier/:id", orderProxy)
 	}
-	router.Run(":8080")
+	if err := router.Run(":8080"); err != nil {
+		log.Fatal(err)
+	}
 }

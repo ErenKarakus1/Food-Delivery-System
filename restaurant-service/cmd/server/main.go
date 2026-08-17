@@ -31,5 +31,7 @@ func main() {
 	router.GET("/restaurants/:id", handler.GetRestauranByIDHandler(pool))
 	router.GET("/restaurants/me", handler.GetMyRestaurants(pool))
 
-	router.Run(":8081")
+	if err := router.Run(":8081"); err != nil {
+		log.Fatal(err)
+	}
 }
