@@ -27,6 +27,19 @@ flowchart LR
     RabbitMQ --> Delivery
 ```
 
+## Project Structure
+
+Each service is independently organized with its own API, business logic, database access, and configuration.
+
+```text
+food-delivery-system/
+├── api-gateway/
+├── auth-service/
+├── restaurant-service/
+├── order-service/
+└── delivery-service/
+```
+
 ## Services
 
 ### Auth Service
